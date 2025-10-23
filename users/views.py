@@ -1,3 +1,6 @@
-from django.shortcuts import render
+from rest_framework import generics
+from .serialaizer import RegisterSerializer
 
-# Create your views here.
+# контроллер для авторизации
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer

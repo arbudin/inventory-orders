@@ -131,6 +131,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # настройки DRF (Django Rest Framework
 REST_FRAMEWORK = {
+    # настройка для авторизации. тут используется сессия и JWT токен (JSON Web Token)
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication'
+    ],
+
+    # здесь права доступа. пока для всех. но мб это избыточно
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
