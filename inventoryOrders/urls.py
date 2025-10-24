@@ -23,10 +23,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 # Мои контроллеры
 from products.views import ProductViewSet
 from users.views import RegisterView
+from orders.views import CartViewSet
 
 router = routers.DefaultRouter()
 router.register(r'products', ProductViewSet, basename='products')
-#router.register(r'users', UserView, basename='auth')
+router.register(r'cart', CartViewSet, basename='cart')
 
 urlpatterns = [
     # ссылка на админ панель
@@ -41,5 +42,8 @@ urlpatterns = [
     path('api/auth/register/', RegisterView.as_view(), name='register'),
 
     # чтобы можно было авторизоваться в самом REST
-    path('api-auth/', include('rest_framework.urls'))
+    path('api-auth/', include('rest_framework.urls')),
+
+    # ссылки для корзины
+    path('api/', include(router.urls)),
 ]

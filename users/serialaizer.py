@@ -9,6 +9,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         min_length=6,
         write_only=True)
 
+    # поля для считывания сериализатором
     class Meta:
         model = User
         fields = ('username', 'email', 'password')
