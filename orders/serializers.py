@@ -12,6 +12,7 @@ class CartItemSerializer(serializers.ModelSerializer):
         model = CartItem
         fields = ['id', 'product', 'product_id', 'quantity']
 
+
     def create(self, validated_data):
         user = self.context['request'].user
         product_id = validated_data.pop('product_id')

@@ -23,7 +23,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 # Мои контроллеры
 from products.views import ProductViewSet
 from users.views import RegisterView
-from orders.views import CartViewSet
+from orders.views import CartViewSet,CheckoutViewSet
 
 router = routers.DefaultRouter()
 router.register(r'products', ProductViewSet, basename='products')
@@ -46,4 +46,7 @@ urlpatterns = [
 
     # ссылки для корзины
     path('api/', include(router.urls)),
+
+    # ссылки для checkout
+    path('api/orders/checkout/', CheckoutViewSet.as_view(), name='checkout'),
 ]
