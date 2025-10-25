@@ -9,18 +9,38 @@ from rest_framework import status, viewsets
 from .serializers import CartItemSerializer
 from .models import CartItem, Order, OrderItem
 
+
+# ============================================
+#   КОРЗИНА (CartViewSet)
+# ============================================
+
 class CartViewSet(viewsets.ModelViewSet):
     serializer_class = CartItemSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
+    # Отображаем только корзину текущего пользователя
     def get_queryset(self):
+        # select_related подтягивает связанные данные (product)
         return CartItem.objects.filter(user=self.request.user).select_related('product')
 
+    # Сохраняем новый элемент корзины
+    # serializer.save() вызывает create() в CartItemSerializer
     def perform_create(self, serializer):
         serializer.save()
 
+
+# ============================================
+#   ОФОРМЛЕНИЕ ЗАКАЗА (CheckoutView)
+# ============================================
+
 class CheckoutViewSet(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    """
+    View для оформления заказа.
+    GET — просто показывает содержимое корзины (для отладки)
+    POST — оформляет заказ и очищает корзину
+    """
 
     def get(self, request):
         """
@@ -47,23 +67,33 @@ class CheckoutViewSet(APIView):
                 "line_total": f"{item_total:.2f}"
             })
             total += item_total
-
+        # Response в Django REST Framework по умолчанию возвращает данные в JSON формате.
         return Response({"cart": items, "total_price": f"{total:.2f}"})
 
     def post(self, request):
+
+        """
+        POST-запрос: оформляет заказ (checkout).
+        Проверяет остатки на складе, создает заказ и очищает корзину.
+        """
+
         user = request.user
+
         if not user.is_authenticated:
             return Response({"error": "Требуется авторизация"}, status=status.HTTP_401_UNAUTHORIZED)
 
         cart_items = CartItem.objects.filter(user=user).select_related('product')
 
+        # Проверяем — есть ли вообще товары
         if not cart_items.exists():
             return Response({"error": "Корзина пуста"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # считаем total (можно пересчитать снова внутри транзакции, для надёжности)
+        # считаем total
         total_price = sum(item.product.price * item.quantity for item in cart_items)
 
         try:
+            # transaction.atomic() — делает так, что все операции ниже выполняются как единое целое.
+            # Если где-то произойдет ошибка — всё откатится.
             with transaction.atomic():
                 # Берём cart_items для блокировки строк товара в БД
                 locked_items = CartItem.objects.filter(user=user).select_for_update().select_related('product')
@@ -85,18 +115,16 @@ class CheckoutViewSet(APIView):
                         price=item.product.price
                     )
 
-                    # атомарное уменьшение склада — либо через save, либо через update + F()
-                    item.product.stock = F('stock') - item.quantity
+                    # Уменьшаем остаток товара на складе
+                    item.product.stock -= item.quantity
                     item.product.save()
-
-                # При использовании F() нужно обновить объект из БД, если дальше используешь его в коде:
-                # for p in locked_items:
-                #     p.product.refresh_from_db()
 
                 # Очищаем корзину
                 locked_items.delete()
 
         except Exception as e:
+            # Если где-то произошла ошибка (например, товара не хватает)
+            # — возвращаем сообщение об ошибке
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         # Возвращаем результат
