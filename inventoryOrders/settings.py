@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'orders',
 
     # сторонние библиотеки
-    'rest_framework'
+    'rest_framework',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -142,3 +143,5 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
 }
+
+SWAGGER_USE_COMPAT_RENDERERS = False
